@@ -1,0 +1,190 @@
+:root {
+    --primary-green: #28a745;
+    --secondary-green: #20c997;
+    --earth-brown: #8b5a3c;
+    --light-green: #d4edda;
+    --dark-green: #155724;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: var(--primary-green) !important;
+}
+
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+    color: white;
+    padding: 80px 0;
+    margin-bottom: 40px;
+}
+
+.crop-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.crop-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.crop-image {
+    height: 200px;
+    object-fit: cover;
+}
+
+.price-badge {
+    background: var(--primary-green);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.status-pending { background: #ffc107; color: #000; }
+.status-accepted { background: #28a745; color: white; }
+.status-rejected { background: #dc3545; color: white; }
+.status-delivered { background: #17a2b8; color: white; }
+.status-paid { background: #6f42c1; color: white; }
+
+.farmer-rating {
+    color: #ffc107;
+}
+
+.message-bubble {
+    max-width: 70%;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    border-radius: 15px;
+    display: inline-block;
+    word-wrap: break-word;
+}
+
+.message-sent {
+    background: var(--primary-green);
+    color: white;
+    border-bottom-right-radius: 5px;
+}
+
+.message-received {
+    background: #343a40; /* Darker bubble for dark theme */
+    color: #f8f9fa; /* Lighter text for dark theme */
+    border-bottom-left-radius: 5px;
+}
+
+.btn-primary {
+    background: var(--primary-green);
+    border-color: var(--primary-green);
+}
+
+.btn-primary:hover {
+    background: var(--dark-green);
+    border-color: var(--dark-green);
+}
+
+.btn-success {
+    background: var(--secondary-green);
+    border-color: var(--secondary-green);
+}
+
+.card-header {
+    border-bottom: 1px solid var(--primary-green);
+}
+
+.dashboard-stat {
+    background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.upload-area {
+    border: 2px dashed var(--primary-green);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    transition: background 0.2s;
+}
+
+.upload-area:hover {
+    background: var(--light-green);
+}
+
+.footer {
+    background: #343a40;
+    color: white;
+    padding: 40px 0;
+    margin-top: 60px;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-green);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 40px 0;
+    }
+    
+    .message-bubble {
+        max-width: 85%;
+    }
+    
+    .dashboard-stat {
+        margin-bottom: 15px;
+    }
+}
+
+/* Progressive Web App styles */
+.install-prompt {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--primary-green);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.offline-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #dc3545;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    z-index: 1001;
+}

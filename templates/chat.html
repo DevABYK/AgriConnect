@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - AgriMarket{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Conversation List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Conversations</h5>
+                    <div class="btn-group btn-group-sm">
+                        {% if current_user.user_type == 'buyer' %}
+                        <a href="{{ url_for('contact_admin') }}" class="btn btn-outline-primary btn-sm">Contact Admin</a>
+                        {% endif %}
+                        {% if current_user.user_type in ['farmer', 'admin'] %}
+                        <a href="{{ url_for('contact_admin') }}" class="btn btn-outline-primary btn-sm">Contact Admin</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="conversation-list" class="list-group list-group-flush">
+                        <!-- Conversations will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Chat Window -->
+            <div class="card">
+                <div id="conversation-header" class="card-header d-flex align-items-center">
+                    {% if partner %}
+                    <i class="fas fa-user-circle me-2"></i>
+                    <div>
+                        <strong>{{ partner.username }}</strong>
+                        <small class="text-muted d-block">
+                            {% if is_admin %}Admin{% else %}{{ partner.user_type.title() }}{% endif %}
+                        </small>
+                    </div>
+                    {% else %}
+                    <span class="text-muted">Select a conversation</span>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body" style="height: 400px; overflow-y: auto;" id="messages-container">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="mb-3 {% if message.sender_id == current_user.id %}text-end{% endif %}">
+                            <div class="message-bubble {% if message.sender_id == current_user.id %}message-sent{% else %}message-received{% endif %}">
+                                {{ message.content }}
+                            </div>
+                            <div class="message-meta small text-muted">
+                                <strong>{{ message.sender.username }}</strong> • 
+                                {{ message.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% if message.read_at %}
+                                <i class="fas fa-check-double text-primary" title="Read"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-comments fa-3x mb-3"></i>
+                            <p>No messages yet. Start a conversation!</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if partner %}
+                <div class="card-footer">
+                    <form id="message-form" class="d-flex">
+                        <input type="hidden" id="receiver_id" value="{{ partner.id }}">
+                        <textarea id="message-input" name="content" class="form-control me-2" placeholder="Type your message..." rows="1" style="resize: none;" required></textarea>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- The messaging.js script will handle the chat functionality -->
+{% endblock %}

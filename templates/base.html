@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AgriMarket - Agricultural Marketplace{% endblock %}</title>
+    
+    <!-- Progressive Web App Meta Tags -->
+    <meta name="description" content="Connect farmers and buyers in Kenya's agricultural marketplace">
+    <meta name="theme-color" content="#28a745">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body data-user-type="{% if current_user.is_authenticated %}{{ current_user.user_type }}{% endif %}"
+      data-user-location="{% if current_user.is_authenticated %}{{ current_user.location }}{% endif %}"
+      data-user-county="{% if current_user.is_authenticated %}{{ current_user.county }}{% endif %}">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-seedling"></i> AgriMarket
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.user_type == 'farmer' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('farmer_dashboard') }}">
+                                    <i class="fas fa-tractor"></i> Dashboard
+                                </a>
+                            </li>
+                        {% elif current_user.user_type == 'buyer' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('buyer_dashboard') }}">
+                                    <i class="fas fa-shopping-cart"></i> Dashboard
+                                </a>
+                            </li>
+                        {% elif current_user.user_type == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                                    <i class="fas fa-users-cog"></i> Admin Dashboard
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('orders') }}">
+                                <i class="fas fa-list-alt"></i> Orders
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('messages') }}">
+                                <i class="fas fa-comments"></i> Messages
+                            </a>
+                        </li>
+                        
+                        {% if current_user.user_type in ['buyer', 'farmer'] %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('contact_admin') }}">
+                                <i class="fas fa-headset"></i> Support
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user"></i> {{ current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-edit"></i> Profile</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register') }}">
+                                <i class="fas fa-user-plus"></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5><i class="fas fa-seedling"></i> AgriMarket</h5>
+                    <p class="text-muted">Connecting farmers and buyers across Kenya for a thriving agricultural marketplace.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('index') }}" class="text-muted">Home</a></li>
+                        <li><a href="#" class="text-muted">About Us</a></li>
+                        <li><a href="#" class="text-muted">Contact</a></li>
+                        <li><a href="#" class="text-muted">Help</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contact Info</h5>
+                    <p class="text-muted">
+                        <i class="fas fa-envelope"></i> support@agrimarket.ke<br>
+                        <i class="fas fa-phone"></i> +254 700 000 000<br>
+                        <i class="fas fa-map-marker-alt"></i> Nairobi, Kenya
+                    </p>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted">&copy; 2024 AgriMarket. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="text-muted">
+                        <a href="#" class="text-muted me-3">Privacy Policy</a>
+                        <a href="#" class="text-muted">Terms of Service</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Main App JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    
+    <!-- Page-specific JS -->
+    {% if current_user.is_authenticated and current_user.user_type == 'farmer' %}
+        <script src="{{ url_for('static', filename='js/farmer.js') }}"></script>
+    {% elif current_user.is_authenticated and current_user.user_type == 'buyer' %}
+        <script src="{{ url_for('static', filename='js/buyer.js') }}"></script>
+    {% endif %}
+    
+    <script src="{{ url_for('static', filename='js/messaging.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

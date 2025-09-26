@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Buyer Dashboard - AgriMarket{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6">
+                <i class="fas fa-shopping-cart text-info"></i> 
+                Welcome, {{ current_user.username }}
+            </h1>
+            <p class="lead text-muted">Discover fresh produce from trusted farmers</p>
+        </div>
+    </div>
+
+    <!-- Dashboard Stats -->
+    <div class="dashboard-stats mb-4">
+        <!-- Stats will be populated by JavaScript -->
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="filter-section mb-4">
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label for="search-crops" class="form-label">Search Crops</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="search-crops" placeholder="Search by name...">
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label for="category-filter" class="form-label">Category</label>
+                <select class="form-select crop-filter" id="category-filter">
+                    <!-- Options populated by JavaScript -->
+                </select>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label for="county-filter" class="form-label">County</label>
+                <select class="form-select crop-filter" id="county-filter">
+                    <!-- Options populated by JavaScript -->
+                </select>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label for="price-filter" class="form-label">Max Price (KSh)</label>
+                <input type="number" class="form-control crop-filter" id="price-filter" placeholder="Max price per unit">
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="browse-crops-tab" data-bs-toggle="tab" data-bs-target="#browse-crops" 
+                    type="button" role="tab">
+                <i class="fas fa-seedling"></i> Browse Crops
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="my-orders-tab" data-bs-toggle="tab" data-bs-target="#my-orders" 
+                    type="button" role="tab">
+                <i class="fas fa-list-alt"></i> My Orders
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" 
+                    type="button" role="tab">
+                <i class="fas fa-heart"></i> Favorites
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="dashboardTabContent">
+        <!-- Browse Crops Tab -->
+        <div class="tab-pane fade show active" id="browse-crops" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4><i class="fas fa-seedling text-success"></i> Available Crops</h4>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-secondary btn-sm active" data-view="grid">
+                        <i class="fas fa-th"></i> Grid
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" data-view="list">
+                        <i class="fas fa-list"></i> List
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row" id="crops-list">
+                <!-- Crops will be loaded here by JavaScript -->
+                <div class="col-12 text-center py-5">
+                    <div class="spinner"></div>
+                    <p class="mt-3 text-muted">Loading available crops...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Orders Tab -->
+        <div class="tab-pane fade" id="my-orders" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4><i class="fas fa-list-alt text-info"></i> My Orders</h4>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-secondary btn-sm active" data-filter="all">All</button>
+                    <button class="btn btn-outline-secondary btn-sm" data-filter="pending">Pending</button>
+                    <button class="btn btn-outline-secondary btn-sm" data-filter="accepted">Accepted</button>
+                    <button class="btn btn-outline-secondary btn-sm" data-filter="delivered">Delivered</button>
+                </div>
+            </div>
+            
+            <div id="orders-list">
+                <!-- Orders will be loaded here by JavaScript -->
+                <div class="text-center py-5">
+                    <div class="spinner"></div>
+                    <p class="mt-3 text-muted">Loading your orders...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorites Tab -->
+        <div class="tab-pane fade" id="favorites" role="tabpanel">
+            <h4><i class="fas fa-heart text-danger"></i> Favorite Farmers</h4>
+            
+            <div class="text-center py-5">
+                <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                <h5>Favorites Coming Soon</h5>
+                <p class="text-muted">Save your favorite farmers and get notified when they have new crops available.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Floating Button -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1000;">
+    <div class="btn-group-vertical" role="group">
+        <button class="btn btn-primary btn-lg rounded-circle mb-2" title="Quick Order" data-bs-toggle="tooltip">
+            <i class="fas fa-plus"></i>
+        </button>
+        <button class="btn btn-info btn-lg rounded-circle" title="Help" data-bs-toggle="tooltip">
+            <i class="fas fa-question"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

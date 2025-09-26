@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Farmer Dashboard - AgriMarket{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6">
+                <i class="fas fa-tractor text-success"></i> 
+                Welcome, {{ current_user.username }}
+            </h1>
+            <p class="lead text-muted">Manage your crops and track your orders</p>
+        </div>
+    </div>
+
+    <!-- Dashboard Stats -->
+    <div class="dashboard-stats mb-4">
+        <!-- Stats will be populated by JavaScript -->
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="crops-tab" data-bs-toggle="tab" data-bs-target="#crops" 
+                    type="button" role="tab">
+                <i class="fas fa-seedling"></i> My Crops
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="add-crop-tab" data-bs-toggle="tab" data-bs-target="#add-crop" 
+                    type="button" role="tab">
+                <i class="fas fa-plus-circle"></i> Add New Crop
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" 
+                    type="button" role="tab">
+                <i class="fas fa-shopping-cart"></i> Orders
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="market-prices-tab" data-bs-toggle="tab" data-bs-target="#market-prices" 
+                    type="button" role="tab">
+                <i class="fas fa-chart-line"></i> Market Prices
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="dashboardTabContent">
+        <!-- My Crops Tab -->
+        <div class="tab-pane fade show active" id="crops" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4><i class="fas fa-seedling text-success"></i> My Crop Listings</h4>
+                <button class="btn btn-success" onclick="document.getElementById('add-crop-tab').click()">
+                    <i class="fas fa-plus"></i> Add New Crop
+                </button>
+            </div>
+            
+            <div class="row" id="crops-list">
+                <!-- Crops will be loaded here by JavaScript -->
+                <div class="col-12 text-center py-5">
+                    <div class="spinner"></div>
+                    <p class="mt-3 text-muted">Loading crops...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Crop Tab -->
+        <div class="tab-pane fade" id="add-crop" role="tabpanel">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="mb-0"><i class="fas fa-plus-circle text-success"></i> Add New Crop</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="add-crop-form" class="ajax-form" action="/api/crops" method="POST" enctype="multipart/form-data">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="name" class="form-label">Crop Name *</label>
+                                        <input type="text" class="form-control" name="name" required 
+                                               placeholder="e.g. Maize, Tomatoes, Beans">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="category" class="form-label">Category *</label>
+                                        <select class="form-select" name="category" required>
+                                            <option value="">Select Category</option>
+                                            <option value="Cereals">Cereals</option>
+                                            <option value="Legumes">Legumes</option>
+                                            <option value="Vegetables">Vegetables</option>
+                                            <option value="Fruits">Fruits</option>
+                                            <option value="Root Tubers">Root Tubers</option>
+                                            <option value="Cash Crops">Cash Crops</option>
+                                            <option value="Herbs & Spices">Herbs & Spices</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="quantity" class="form-label">Quantity *</label>
+                                        <input type="number" class="form-control" name="quantity" step="0.1" min="0" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="unit" class="form-label">Unit *</label>
+                                        <select class="form-select" name="unit" required>
+                                            <option value="">Select Unit</option>
+                                            <option value="kg">Kilograms (kg)</option>
+                                            <option value="tons">Tons</option>
+                                            <option value="bags">Bags</option>
+                                            <option value="pieces">Pieces</option>
+                                            <option value="bunches">Bunches</option>
+                                            <option value="crates">Crates</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="price_per_unit" class="form-label">Price per Unit (KSh) *</label>
+                                        <input type="number" class="form-control" name="price_per_unit" step="0.01" min="0" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" name="description" rows="3" 
+                                              placeholder="Describe your crop quality, farming methods, etc."></textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="harvest_date" class="form-label">Harvest Date</label>
+                                        <input type="date" class="form-control" name="harvest_date">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="expiry_date" class="form-label">Best Before Date</label>
+                                        <input type="date" class="form-control" name="expiry_date">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="location" class="form-label">Location</label>
+                                        <input type="text" class="form-control" name="location" 
+                                               value="{{ current_user.location or '' }}" 
+                                               placeholder="Farm location or nearest town">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="county" class="form-label">County</label>
+                                        <input type="text" class="form-control" name="county" 
+                                               value="{{ current_user.county or '' }}">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="quality_grade" class="form-label">Quality Grade</label>
+                                        <select class="form-select" name="quality_grade">
+                                            <option value="A">Grade A - Premium</option>
+                                            <option value="B">Grade B - Standard</option>
+                                            <option value="C">Grade C - Basic</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="image" class="form-label">Crop Photo</label>
+                                        <input type="file" class="form-control" name="image" accept="image/*">
+                                        <div class="form-text">Upload a clear photo of your crop (max 5MB)</div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success btn-lg" data-original-text="Add Crop Listing">
+                                        <i class="fas fa-plus-circle"></i> Add Crop Listing
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Tab -->
+        <div class="tab-pane fade" id="orders" role="tabpanel">
+            <h4><i class="fas fa-shopping-cart text-info"></i> Recent Orders</h4>
+            <div id="orders-list">
+                <!-- Orders will be loaded here by JavaScript -->
+                <div class="text-center py-5">
+                    <div class="spinner"></div>
+                    <p class="mt-3 text-muted">Loading orders...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Prices Tab -->
+        <div class="tab-pane fade" id="market-prices" role="tabpanel">
+            <h4><i class="fas fa-chart-line text-warning"></i> Market Price Insights</h4>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="crop-name-select" class="form-label">Select Crop</label>
+                            <select id="crop-name-select" class="form-select">
+                                <option value="">Select a crop to view prices</option>
+                                <option value="Maize">Maize</option>
+                                <option value="Beans">Beans</option>
+                                <option value="Tomatoes">Tomatoes</option>
+                                <option value="Onions">Onions</option>
+                                <option value="Potatoes">Potatoes</option>
+                                <option value="Cabbages">Cabbages</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="market-prices">
+                        <p class="text-muted">Select a crop to view market price data</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

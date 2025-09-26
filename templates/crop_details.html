@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}{{ crop.name }} - AgriMarket{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+            {% if current_user.is_authenticated %}
+                {% if current_user.user_type == 'buyer' %}
+                    <li class="breadcrumb-item"><a href="{{ url_for('buyer_dashboard') }}">Dashboard</a></li>
+                {% endif %}
+            {% endif %}
+            <li class="breadcrumb-item active">{{ crop.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Crop Image -->
+        <div class="col-lg-6 mb-4">
+            {% if crop.image_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + crop.image_filename) }}" 
+                     class="img-fluid rounded shadow" alt="{{ crop.name }}" style="width: 100%; height: 400px; object-fit: cover;">
+            {% else %}
+                <div class="bg-light rounded shadow d-flex align-items-center justify-content-center" style="height: 400px;">
+                    <div class="text-center">
+                        <i class="fas fa-image fa-5x text-muted mb-3"></i>
+                        <p class="text-muted">No image available</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Crop Details -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h1 class="card-title mb-3">{{ crop.name }}</h1>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-secondary me-2">{{ crop.category }}</span>
+                        {% if crop.quality_grade %}
+                            <span class="badge bg-success">Grade {{ crop.quality_grade }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <h4 class="text-success">
+                                KSh {{ "%.2f"|format(crop.price_per_unit) }}
+                                <small class="text-muted">/ {{ crop.unit }}</small>
+                            </h4>
+                        </div>
+                        <div class="col-sm-6">
+                            <p class="mb-0"><strong>Available:</strong> {{ crop.quantity }} {{ crop.unit }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Farmer Information -->
+                    <div class="border-top pt-3 mb-3">
+                        <h6><i class="fas fa-user text-primary"></i> Farmer Information</h6>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <p class="mb-1"><strong>{{ crop.farmer.username }}</strong></p>
+                                <div class="farmer-rating">
+                                    {% set rating = crop.farmer.rating %}
+                                    {% for i in range(5) %}
+                                        {% if i < rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <small class="text-muted">({{ crop.farmer.total_ratings }} reviews)</small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <p class="mb-0">
+                                    <i class="fas fa-map-marker-alt text-danger"></i>
+                                    {{ crop.location or crop.county }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Crop Details -->
+                    <div class="border-top pt-3 mb-3">
+                        <h6><i class="fas fa-info-circle text-info"></i> Crop Details</h6>
+                        <div class="row">
+                            {% if crop.harvest_date %}
+                            <div class="col-sm-6">
+                                <p class="mb-1">
+                                    <strong>Harvested:</strong><br>
+                                    <small>{{ crop.harvest_date.strftime('%d %B %Y') }}</small>
+                                </p>
+                            </div>
+                            {% endif %}
+                            {% if crop.expiry_date %}
+                            <div class="col-sm-6">
+                                <p class="mb-1">
+                                    <strong>Best Before:</strong><br>
+                                    <small>{{ crop.expiry_date.strftime('%d %B %Y') }}</small>
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if crop.description %}
+                    <div class="border-top pt-3 mb-3">
+                        <h6><i class="fas fa-align-left text-secondary"></i> Description</h6>
+                        <p class="text-muted">{{ crop.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    {% if current_user.is_authenticated and current_user.user_type == 'buyer' and current_user.id != crop.farmer_id %}
+                        <div class="border-top pt-3">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success btn-lg place-order-btn" data-crop-id="{{ crop.id }}">
+                                    <i class="fas fa-shopping-cart"></i> Place Order
+                                </button>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-primary w-100 contact-farmer" data-farmer-id="{{ crop.farmer_id }}">
+                                            <i class="fas fa-comment"></i> Contact Farmer
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-secondary w-100" onclick="navigator.share({title: '{{ crop.name }}', url: window.location.href})">
+                                            <i class="fas fa-share"></i> Share
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% elif current_user.is_authenticated and current_user.id == crop.farmer_id %}
+                        <div class="border-top pt-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> This is your crop listing
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary edit-crop" data-crop-id="{{ crop.id }}">
+                                    <i class="fas fa-edit"></i> Edit Listing
+                                </button>
+                            </div>
+                        </div>
+                    {% elif not current_user.is_authenticated %}
+                        <div class="border-top pt-3">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('login') }}" class="btn btn-success btn-lg">
+                                    <i class="fas fa-sign-in-alt"></i> Login to Order
+                                </a>
+                                <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-user-plus"></i> Create Account
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Crops Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3>More from {{ crop.farmer.username }}</h3>
+            <hr>
+            <div class="row" id="related-crops">
+                <!-- Related crops will be loaded here -->
+                <div class="col-12 text-center py-3">
+                    <p class="text-muted">Loading more crops from this farmer...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load related crops from the same farmer
+    fetch(`/api/crops?farmer_id={{ crop.farmer_id }}`, {
+        credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const relatedContainer = document.getElementById('related-crops');
+        const relatedCrops = data.crops.filter(c => c.id !== {{ crop.id }}).slice(0, 4);
+        
+        if (relatedCrops.length === 0) {
+            relatedContainer.innerHTML = '<div class="col-12 text-center py-3"><p class="text-muted">No other crops from this farmer</p></div>';
+            return;
+        }
+        
+        relatedContainer.innerHTML = relatedCrops.map(crop => `
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="card crop-card">
+                    ${crop.image_filename ? `
+                        <img src="/static/uploads/${crop.image_filename}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="${crop.name}">
+                    ` : `
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                            <i class="fas fa-image fa-2x text-muted"></i>
+                        </div>
+                    `}
+                    <div class="card-body">
+                        <h6 class="card-title">${crop.name}</h6>
+                        <p class="card-text">
+                            <small class="text-muted">${crop.category}</small><br>
+                            <span class="price-badge">KSh ${crop.price_per_unit}/${crop.unit}</span>
+                        </p>
+                        <a href="/crop/${crop.id}" class="btn btn-sm btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    })
+    .catch(error => {
+        console.error('Failed to load related crops:', error);
+        document.getElementById('related-crops').innerHTML = '<div class="col-12 text-center py-3"><p class="text-muted">Failed to load related crops</p></div>';
+    });
+});
+</script>
+{% endblock %}

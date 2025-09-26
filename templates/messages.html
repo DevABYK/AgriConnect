@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - AgriMarket{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Conversation List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Conversations</h5>
+                    <div class="btn-group btn-group-sm">
+                        {% if current_user.user_type != 'admin' %}
+                        <a href="{{ url_for('contact_admin') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-headset"></i> Contact Support
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="conversation-list" class="list-group list-group-flush">
+                        <!-- Conversations will be loaded here -->
+                        <div class="text-center p-4 text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Loading conversations...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Message Area -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                    <h5>Select a conversation to start messaging</h5>
+                    <p class="text-muted">Choose a conversation from the left to view and send messages.</p>
+                    
+                    {% if current_user.user_type == 'buyer' %}
+                    <p class="small text-muted mt-4">
+                        <strong>Tip:</strong> You can contact farmers directly from the crop listings by clicking the "Contact Farmer" button.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+class MessagesPage {
+    constructor() {
+        this.loadConversations();
+        this.setupAutoRefresh();
+    }
+    
+    loadConversations() {
+        fetch('/api/messages')
+            .then(response => response.json())
+            .then(data => {
+                const conversationList = document.getElementById('conversation-list');
+                conversationList.innerHTML = '';
+                
+                if (data.conversations.length === 0) {
+                    conversationList.innerHTML = `
+                        <div class="text-center p-4 text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p>No conversations yet</p>
+                            <small>Start messaging by contacting farmers or support</small>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                data.conversations.forEach(conv => {
+                    const unreadBadge = conv.unread_count > 0 ? 
+                        `<span class="badge bg-danger rounded-pill">${conv.unread_count}</span>` : '';
+                    
+                    const conversationItem = document.createElement('a');
+                    conversationItem.className = 'list-group-item list-group-item-action';
+                    
+                    // Create appropriate contact URL
+                    const contactUrl = conv.partner_type === 'admin'
+                        ? '{{ url_for("contact_admin") }}' // Admins might have a special route
+                        : `{{ url_for("view_conversation", partner_id=0) }}`.replace('0', conv.partner_id);
+
+                    conversationItem.href = contactUrl;
+                    conversationItem.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>${conv.partner_name}</strong>
+                                <span class="badge bg-secondary ms-2">${conv.partner_type}</span>
+                                <p class="mb-1 small">${conv.last_message.length > 60 ? conv.last_message.substring(0, 60) + '...' : conv.last_message}</p>
+                                <small class="text-muted">by ${conv.last_sender_name} • ${new Date(conv.last_message_time).toLocaleString()}</small>
+                            </div>
+                            <div class="text-end">
+                                ${unreadBadge}
+                            </div>
+                        </div>
+                    `;
+                    conversationList.appendChild(conversationItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading conversations:', error);
+                document.getElementById('conversation-list').innerHTML = `
+                    <div class="text-center p-4 text-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load conversations</p>
+                    </div>
+                `;
+            });
+    }
+    
+    setupAutoRefresh() {
+        // Refresh conversations every 10 seconds
+        setInterval(() => {
+            this.loadConversations();
+        }, 10000);
+    }
+}
+
+// Initialize messages page
+document.addEventListener('DOMContentLoaded', () => {
+    new MessagesPage();
+});
+</script>
+{% endblock %}

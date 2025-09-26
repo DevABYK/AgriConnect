@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}Orders - AgriMarket{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6">
+                <i class="fas fa-list-alt text-info"></i> 
+                Order Management
+            </h1>
+            <p class="lead text-muted">Track and manage your orders</p>
+        </div>
+    </div>
+
+    <!-- Order Filters -->
+    <div class="filter-section mb-4">
+        <div class="row align-items-end">
+            <div class="col-md-3 mb-3">
+                <label for="status-filter" class="form-label">Order Status</label>
+                <select class="form-select" id="status-filter">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="paid">Paid</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label for="date-filter" class="form-label">Order Date</label>
+                <select class="form-select" id="date-filter">
+                    <option value="">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+            </div>
+            
+            {% if current_user.user_type == 'buyer' %}
+            <div class="col-md-4 mb-3">
+                <label for="farmer-search" class="form-label">Search by Farmer</label>
+                <input type="text" class="form-control" id="farmer-search" placeholder="Enter farmer name...">
+            </div>
+            {% else %}
+            <div class="col-md-4 mb-3">
+                <label for="buyer-search" class="form-label">Search by Buyer</label>
+                <input type="text" class="form-control" id="buyer-search" placeholder="Enter buyer name...">
+            </div>
+            {% endif %}
+            
+            <div class="col-md-2 mb-3">
+                <button class="btn btn-primary w-100" onclick="applyFilters()">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h4 id="total-orders">0</h4>
+                    <p class="mb-0">Total Orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h4 id="pending-orders">0</h4>
+                    <p class="mb-0">Pending Orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4 id="completed-orders">0</h4>
+                    <p class="mb-0">Completed Orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h4 id="total-value">KSh 0</h4>
+                    <p class="mb-0">Total Value</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders List -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Orders</h5>
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-secondary btn-sm active" data-view="detailed">
+                    <i class="fas fa-list"></i> Detailed View
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" data-view="compact">
+                    <i class="fas fa-table"></i> Compact View
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="orders-container">
+                <!-- Loading state -->
+                <div class="text-center py-5">
+                    <div class="spinner"></div>
+                    <p class="mt-3 text-muted">Loading orders...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="mt-4" id="pagination-container" style="display: none;">
+        <ul class="pagination justify-content-center">
+            <!-- Pagination will be populated by JavaScript -->
+        </ul>
+    </nav>
+</div>
+
+<script>
+class OrdersManager {
+    constructor() {
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
+        this.orders = [];
+        this.filteredOrders = [];
+        this.init();
+    }
+
+    init() {
+        this.loadOrders();
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        // Filter changes
+        ['status-filter', 'date-filter', 'farmer-search', 'buyer-search'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', () => this.applyFilters());
+                if (element.type === 'text') {
+                    element.addEventListener('input', this.debounce(() => this.applyFilters(), 500));
+                }
+            }
+        });
+
+        // View toggle
+        document.querySelectorAll('[data-view]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.renderOrders(this.filteredOrders);
+            });
+        });
+    }
+
+    async loadOrders() {
+        try {
+            const response = await fetch('/api/orders', {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.orders = data.orders || [];
+                this.filteredOrders = [...this.orders];
+                this.updateStatistics();
+                this.renderOrders(this.filteredOrders);
+            } else {
+                throw new Error('Failed to load orders');
+            }
+        } catch (error) {
+            console.error('Error loading orders:', error);
+            document.getElementById('orders-container').innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5>Failed to Load Orders</h5>
+                    <p class="text-muted">Please try refreshing the page</p>
+                    <button class="btn btn-primary" onclick="location.reload()">Refresh</button>
+                </div>
+            `;
+        }
+    }
+
+    applyFilters() {
+        const statusFilter = document.getElementById('status-filter')?.value || '';
+        const dateFilter = document.getElementById('date-filter')?.value || '';
+        const farmerSearch = document.getElementById('farmer-search')?.value.toLowerCase() || '';
+        const buyerSearch = document.getElementById('buyer-search')?.value.toLowerCase() || '';
+
+        this.filteredOrders = this.orders.filter(order => {
+            let matches = true;
+
+            if (statusFilter && order.status !== statusFilter) {
+                matches = false;
+            }
+
+            if (dateFilter) {
+                const orderDate = new Date(order.created_at);
+                const today = new Date();
+                
+                switch (dateFilter) {
+                    case 'today':
+                        matches = matches && orderDate.toDateString() === today.toDateString();
+                        break;
+                    case 'week':
+                        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        matches = matches && orderDate >= weekAgo;
+                        break;
+                    case 'month':
+                        const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+                        matches = matches && orderDate >= monthAgo;
+                        break;
+                }
+            }
+
+            if (farmerSearch && !order.farmer_name.toLowerCase().includes(farmerSearch)) {
+                matches = false;
+            }
+
+            if (buyerSearch && !order.buyer_name.toLowerCase().includes(buyerSearch)) {
+                matches = false;
+            }
+
+            return matches;
+        });
+
+        this.currentPage = 1;
+        this.updateStatistics();
+        this.renderOrders(this.filteredOrders);
+    }
+
+    updateStatistics() {
+        const total = this.filteredOrders.length;
+        const pending = this.filteredOrders.filter(o => o.status === 'pending').length;
+        const completed = this.filteredOrders.filter(o => o.status === 'paid').length;
+        const totalValue = this.filteredOrders.reduce((sum, o) => sum + o.total_amount, 0);
+
+        document.getElementById('total-orders').textContent = total;
+        document.getElementById('pending-orders').textContent = pending;
+        document.getElementById('completed-orders').textContent = completed;
+        document.getElementById('total-value').textContent = window.agriApp.formatCurrency(totalValue);
+    }
+
+    renderOrders(orders) {
+        const container = document.getElementById('orders-container');
+        const isDetailed = document.querySelector('[data-view].active')?.dataset.view === 'detailed';
+
+        if (orders.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                    <h5>No Orders Found</h5>
+                    <p class="text-muted">No orders match your current filters</p>
+                </div>
+            `;
+            return;
+        }
+
+        if (isDetailed) {
+            this.renderDetailedView(orders, container);
+        } else {
+            this.renderCompactView(orders, container);
+        }
+    }
+
+    renderDetailedView(orders, container) {
+        container.innerHTML = orders.map(order => `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="card-title">${order.crop_name}</h6>
+                            <p class="card-text">
+                                <strong>Quantity:</strong> ${order.quantity}<br>
+                                <strong>Total:</strong> ${window.agriApp.formatCurrency(order.total_amount)}<br>
+                                <strong>${document.body.dataset.userType === 'farmer' ? 'Buyer' : 'Farmer'}:</strong> 
+                                ${document.body.dataset.userType === 'farmer' ? order.buyer_name : order.farmer_name}
+                            </p>
+                            <small class="text-muted">
+                                Order placed: ${window.agriApp.formatDateTime(order.created_at)}
+                                ${order.delivery_date ? `<br>Delivery: ${window.agriApp.formatDate(order.delivery_date)}` : ''}
+                            </small>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="badge status-badge status-${order.status} mb-2">${order.status.toUpperCase()}</span>
+                            ${this.renderOrderActions(order)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderCompactView(orders, container) {
+        container.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Crop</th>
+                            <th>${document.body.dataset.userType === 'farmer' ? 'Buyer' : 'Farmer'}</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orders.map(order => `
+                            <tr>
+                                <td>#${order.id}</td>
+                                <td>${order.crop_name}</td>
+                                <td>${document.body.dataset.userType === 'farmer' ? order.buyer_name : order.farmer_name}</td>
+                                <td>${order.quantity}</td>
+                                <td>${window.agriApp.formatCurrency(order.total_amount)}</td>
+                                <td><span class="badge status-badge status-${order.status}">${order.status.toUpperCase()}</span></td>
+                                <td>${window.agriApp.formatDate(order.created_at)}</td>
+                                <td>${this.renderOrderActions(order)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    renderOrderActions(order) {
+        const userType = document.body.dataset.userType;
+        
+        if (userType === 'farmer') {
+            switch (order.status) {
+                case 'pending':
+                    return `
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-success update-order-status" data-order-id="${order.id}" data-status="accepted">
+                                Accept
+                            </button>
+                            <button class="btn btn-danger update-order-status" data-order-id="${order.id}" data-status="rejected">
+                                Reject
+                            </button>
+                        </div>
+                    `;
+                case 'accepted':
+                    return `
+                        <button class="btn btn-info btn-sm update-order-status" data-order-id="${order.id}" data-status="delivered">
+                            Mark Delivered
+                        </button>
+                    `;
+                default:
+                    return '';
+            }
+        } else {
+            switch (order.status) {
+                case 'accepted':
+                    return `
+                        <button class="btn btn-success btn-sm pay-order" data-order-id="${order.id}">
+                            Pay Now
+                        </button>
+                    `;
+                case 'delivered':
+                    return `
+                        <button class="btn btn-info btn-sm update-order-status" data-order-id="${order.id}" data-status="paid">
+                            Confirm Delivery
+                        </button>
+                    `;
+                default:
+                    return '';
+            }
+        }
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.ordersManager = new OrdersManager();
+});
+
+function applyFilters() {
+    if (window.ordersManager) {
+        window.ordersManager.applyFilters();
+    }
+}
+</script>
+{% endblock %}
